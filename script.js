@@ -12,7 +12,7 @@ const volumeOuter = Math.pow(100, 3);  // Volume of the outer cube
 const sizeOuter = Math.cbrt(volumeOuter);  // Compute side length from volume
 
 // Compute the maximum cube size based on available screen space
-const maxCubeSize = Math.min(svgWidth, svgHeight); // Fraction of the smaller screen dimension
+const maxCubeSize = 0.5 * Math.min(svgWidth, svgHeight); // Fraction of the smaller screen dimension
 const scaleFactor = maxCubeSize / sizeOuter;
 
 // Apply scaling factor to cube sizes
@@ -21,11 +21,11 @@ const scaledSizeOuter = sizeOuter * scaleFactor;
 
 // Compute the centered position for the cubes
 const startX = svgWidth / 2;
-const startY = svgHeight / 2 + scaledSizeOuter / 3.5; // Adjust for isometric perspective
+const startY = svgHeight / 2 + scaledSizeOuter / 0.75 ; // Adjust for isometric perspective
 
 // Adjust rotation: slightly skew the angles
 const angleX = Math.PI / 5; // Adjusted angle for slight rotation
-const angleY = Math.PI / 4.5; // Adjusted for off-center view
+const angleY = Math.PI / 5; // Adjusted for off-center view
 
 
 // Function to label a point
@@ -53,7 +53,7 @@ function drawFace(points, color, opacity, strokeOnly = false, dashed = false) {
 // Function to create a full 3D cube
 function createCube(x, y, size, color, opacity, strokeOnly = false) {
     const dx = size * Math.cos(angleX);
-    const dy = size * Math.sin(angleY);
+    const dy = size * Math.cos(angleY);
 
     const points = {
         frontTopLeft: [x - dx, y - dy - size],
@@ -118,7 +118,7 @@ svg.selectAll("*").remove();
 // drawTopFace(startX, startY, sizeOuter, "none");
 
 // Outer cube: Transparent with only strokes, includes hidden edges
-createCube(startX, startY, scaledSizeOuter, "white", 0, true);
+createCube(startX, startY, scaledSizeOuter, "red", 0.9, true);
 
 // Inner cube: Fully visible
 // createCube(startX, startY, scaledSizeInner, "red", 1);
