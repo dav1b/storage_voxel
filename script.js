@@ -8,39 +8,48 @@ const svg = d3.select("svg")
     .attr("height", svgHeight);
 
 // Cube Volume Constants
-const volumeOuter = Math.pow(100, 3);  // Volume of the outer cube
-const sizeOuter = Math.cbrt(volumeOuter);  // Compute side length from volume
+const volumeOuter = Math.pow(400, 3);  // Outer cube
+const volumeInner = Math.pow(100, 3);  // Inner cube
+
+// Compute side length from volume
+const sizeOuter = Math.cbrt(volumeOuter);
+const sizeInner = Math.cbrt(volumeInner);
 
 // Compute the maximum cube size based on available screen space
-const maxCubeSize = 0.5 * Math.min(svgWidth, svgHeight); // Fraction of the smaller screen dimension
+const maxCubeSize = 0.25 * Math.min(svgWidth, svgHeight);
 const scaleFactor = maxCubeSize / sizeOuter;
 
 // Apply scaling factor to cube sizes
 const scaledSizeOuter = sizeOuter * scaleFactor;
-// const scaledSizeInner = sizeInner * scaleFactor;
+const scaledSizeInner = sizeInner * scaleFactor;
 
 // Compute the centered position for the cubes
 const startX = svgWidth / 2;
-const startY = svgHeight / 2 + scaledSizeOuter / 0.75 ; // Adjust for isometric perspective
+const startY = svgHeight/ 2+ scaledSizeOuter / 6; // Adjust for isometric perspective
 
 // Adjust rotation: slightly skew the angles
-const angleX = Math.PI / 5; // Adjusted angle for slight rotation
-const angleY = Math.PI / 5; // Adjusted for off-center view
+const angleX = Math.PI / 3; // Adjusted angle for slight rotation
+const angleY = Math.PI / 3; // Adjusted for off-center view
 
+// Define face colors
+const outerCubeColors = { front: "none", right: "none", left: "none" };  // No fill for transparency
+const innerCubeColors = { front: "red", right: "none", left: "red" };  // Different colors for inner cube
 
-// Function to label a point
-function labelPoint(name, x, y) {
-    svg.append("text")
-        .attr("x", x + 5)  // Offset to avoid overlap
-        .attr("y", y - 5)
-        .attr("fill", "black")
-        .attr("font-size", "12px")
-        .attr("font-family", "Arial")
-        .text(name);
+// Function to label points dynamically based on their key
+function labelPoints(pointObject) {
+    Object.entries(pointObject).forEach(([key, value]) => {
+        svg.append("text")
+            .attr("x", value[0] + 5)  // Offset slightly for visibility
+            .attr("y", value[1] - 5)
+            .attr("fill", "black")
+            .attr("font-size", "12px")
+            .attr("font-family", "Arial")
+            .text(key);  // Use the key as the label
+    });
 }
 
 // Function to create a cube face
-function drawFace(points, color, opacity, strokeOnly = false, dashed = false) {
+function drawFace(points, color, opacity, strokeOnly, dashed) {
     svg.append("polygon")
         .attr("points", points.map(p => p.join(",")).join(" "))
         .attr("fill", strokeOnly ? "none" : color)
@@ -51,25 +60,29 @@ function drawFace(points, color, opacity, strokeOnly = false, dashed = false) {
 }
 
 // Function to create a full 3D cube
-function createCube(x, y, size, color, opacity, strokeOnly = false) {
+function createCube(x, y, size, faceColours, strokeOnly = false, dashed= false, label = false) {
     const dx = size * Math.cos(angleX);
     const dy = size * Math.cos(angleY);
 
     const points = {
-        frontTopLeft: [x - dx, y - dy - size],
-        frontTopRight: [x + dx, y - dy - size],
-        frontBottomLeft: [x - dx, y - dy],
-        frontBottomRight: [x + dx, y - dy],
-        backTopLeft: [x - dx - size / 4, y - dy - size - size / 2], // Adjusted for slight rotation
-        backTopRight: [x + dx - size / 4, y - dy - size - size / 2],
-        backBottomLeft: [x - dx - size / 4, y - dy - size / 2],
-        backBottomRight: [x + dx - size / 4, y - dy - size / 2]
+        // Front face
+        frontTopLeft: [x - dx, y - dy - size], // D
+        frontTopRight: [x + dx, y - dy - size], // C
+        frontBottomLeft: [x - dx, y - dy], // B
+        frontBottomRight: [x + dx, y - dy], // A
+    
+        // Back face (Shifted back and slightly up)
+        backTopLeft: [x - dx - size / 2, y - dy - size - size / 2], // H
+        backTopRight: [x + dx - size / 2, y - dy - size - size / 2], // G
+        backBottomLeft: [x - dx - size / 2, y - dy - size / 2], // F
+        backBottomRight: [x + dx - size / 2, y - dy - size / 2] // E
     };
 
     // Draw visible faces
-    drawFace([points.frontTopLeft, points.frontTopRight, points.frontBottomRight, points.frontBottomLeft], color, opacity, strokeOnly);
-    drawFace([points.frontTopRight, points.backTopRight, points.backBottomRight, points.frontBottomRight], d3.color(color).darker(1.2), opacity, strokeOnly);
-    drawFace([points.frontTopLeft, points.backTopLeft, points.backBottomLeft, points.frontBottomLeft], d3.color(color).brighter(1.2), opacity, strokeOnly);
+    drawFace([points.frontTopLeft, points.frontTopRight, points.frontBottomRight, points.frontBottomLeft], faceColours.front, true, true);
+    drawFace([points.frontTopLeft, points.backTopLeft, points.backBottomLeft, points.frontBottomLeft], faceColours.left, true, true);
+    drawFace([points.frontTopRight, points.backTopRight, points.backBottomRight, points.frontBottomRight], faceColours.right, true, true);
+    drawFace([points.frontTopLeft, points.backTopLeft, points.backTopRight, points.frontTopRight], faceColours.right, true, true);
 
     // Draw hidden edges (dashed)
     drawFace([points.backTopLeft, points.backTopRight, points.backBottomRight, points.backBottomLeft], "none", 1, true, true);
@@ -77,49 +90,36 @@ function createCube(x, y, size, color, opacity, strokeOnly = false) {
     drawFace([points.frontTopRight, points.backTopRight], "none", 1, true, true);
     drawFace([points.frontBottomLeft, points.backBottomLeft], "none", 1, true, true);
     drawFace([points.frontBottomRight, points.backBottomRight], "none", 1, true, true);
+
+    // Label all points dynamically
+    if (label) {
+        labelPoints(points);
+    }
 }
-
-// // Function to create the **left face** (with labels)
-
-//     const points = {
-//         topLeft: [x - dx, y - dy - size],
-//         topRight: [x, y - size],
-//         bottomLeft: [x - dx, y - dy],
-//         bottomRight: [x, y]
-//     };
-// }
-
-// // Function to create the **right face** (with labels)
-
-//     const points = {
-//         topLeft: [x, y - size],
-//         topRight: [x + dx, y - dy - size],
-//         bottomLeft: [x, y],
-//         bottomRight: [x + dx, y - dy]
-//     };
-
-// // Function to create the **top face** (with labels)
-
-//     const points = {
-//         frontLeft: [x - dx, y - dy - size],  // Front left corner (A)
-//         frontRight: [x + dx, y - dy - size], // Front right corner (B)
-//         backLeft: [x, y - size],          // Back left corner (E)
-//         backRight: [x, y - 2*size]          // Back right corner (F)
-//     };
-
-// }
 
 // Clear existing elements
 svg.selectAll("*").remove();
 
-// // Draw cube faces with labels
-// drawLeftFace(startX, startY, sizeOuter, "none");
-// drawRightFace(startX, startY, sizeOuter, "none");
-// drawTopFace(startX, startY, sizeOuter, "none");
-
 // Outer cube: Transparent with only strokes, includes hidden edges
-createCube(startX, startY, scaledSizeOuter, "red", 0.9, true);
+// createCube(startX, startY, scaledSizeOuter, "red", 0.9, true);
+createCube(
+    startX, 
+    startY, 
+    scaledSizeOuter, 
+    outerCubeColors, 
+    true, 
+    true,
+    false
+    );
 
 // Inner cube: Fully visible
-// createCube(startX, startY, scaledSizeInner, "red", 1);
-
+// createCube(startX, startY, scaledSizeInner, "red", 1, true);
+createCube(
+    startX - (scaledSizeOuter - scaledSizeInner) / 2, 
+    startY - (scaledSizeOuter - scaledSizeInner) / 2, 
+    scaledSizeInner, 
+    innerCubeColors, 
+    false, 
+    false,
+    false
+    );
