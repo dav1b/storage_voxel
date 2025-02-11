@@ -8,8 +8,8 @@ const svg = d3.select("svg")
     .attr("height", svgHeight);
 
 // Cube Volume Constants
-const volumeOuter = Math.pow(400, 3);  // Outer cube
-const volumeInner = Math.pow(100, 3);  // Inner cube
+const volumeOuter = Math.pow(494.7, 3);  // Outer cube, actual proportions 1000:0.49 ($87B / TB in 1956 to $11 / TB in 2023 for disk drive space)
+const volumeInner = Math.pow(10, 3);  // Inner cube, actual proportions 494.7:10 ($1.2M / TB in 1993 to $11 / TB in 2023 for disk drive space)
 
 // Compute side length from volume
 const sizeOuter = Math.cbrt(volumeOuter);
@@ -33,7 +33,7 @@ const angleY = Math.PI / 3; // Adjusted for off-center view
 
 // Define face colors
 const outerCubeColors = { front: "none", right: "none", left: "none" };  // No fill for transparency
-const innerCubeColors = { front: "red", right: "none", left: "red" };  // Different colors for inner cube
+const innerCubeColors = { front: "red", right: "red", left: "red" };  // Different colors for inner cube
 
 // Function to label points dynamically based on their key
 function labelPoints(pointObject) {
@@ -54,7 +54,7 @@ function drawFace(points, color, opacity, strokeOnly, dashed) {
         .attr("points", points.map(p => p.join(",")).join(" "))
         .attr("fill", strokeOnly ? "none" : color)
         .attr("stroke", "black")
-        .attr("stroke-width", 2)
+        .attr("stroke-width", 1)
         .attr("stroke-dasharray", dashed ? "4,4" : "0") // Dashed lines for hidden edges
         .attr("opacity", opacity);
 }
